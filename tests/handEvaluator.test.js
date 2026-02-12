@@ -239,4 +239,52 @@ describe("Texas Hold'em hand evaluation", () => {
 
     expect(result.winners).toEqual(["p2"]);
   });
+  test("breaks ties within Four of a Kind by quad then kicker", () => {
+    const board = ["AS", "AD", "AH", "KS", "QC"];
+    const players = [
+      { id: "p1", hole: ["AC", "2D"] },
+      { id: "p2", hole: ["7C", "KC"] }
+    ];
+
+    const result = evaluateGame(board, players);
+
+    expect(result.winners).toEqual(["p2"]);
+  });
+  test("breaks ties within Straight Flush by high card", () => {
+    const board = ["9S", "8S", "7S", "6S", "5C"];
+    const players = [
+      { id: "p1", hole: ["4D", "KC"] },
+      { id: "p2", hole: ["TS", "2D"] }
+    ];
+
+    const result = evaluateGame(board, players);
+
+    expect(result.winners).toEqual(["p2"]);
+  });
+  test("Flush beats Straight", () => {
+    const board = ["9S", "8S", "7S", "6C", "5D"];
+    const players = [
+      { id: "p1", hole: ["4H", "3H"] },
+      { id: "p2", hole: ["TS", "2S"] }
+    ];
+
+    const result = evaluateGame(board, players);
+
+    expect(result.winners).toEqual(["p2"]);
+    expect(result.players[1].best.category).toEqual("Flush");
+    expect(result.players[0].best.category).toEqual("Straight");
+  });
+  test("Wheel straight (A-2-3-4-5) loses to 6-high straight", () => {
+    const board = ["2H", "3D", "4C", "6S", "7H"];
+    const players = [
+      { id: "p1", hole: ["AH", "5C"] },
+      { id: "p2", hole: ["8D", "9C"] }
+    ];
+
+    const result = evaluateGame(board, players);
+
+    expect(result.winners).toEqual(["p2"]);
+    expect(result.players[1].best.chosen5[0]).toEqual("9C");
+    expect(result.players[0].best.chosen5[0]).toEqual("5C");
+  });
 });
