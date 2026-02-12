@@ -173,5 +173,15 @@ describe("Texas Hold'em hand evaluation", () => {
       }
     ]);
   });
-  test.todo("splits pot when best hands are equal");
+  test("splits pot when best hands are equal", () => {
+    const board = ["5S", "6D", "7H", "8C", "9S"];
+    const players = [
+      { id: "p1", hole: ["2D", "KC"] },
+      { id: "p2", hole: ["AD", "QC"] }
+    ];
+
+    const result = evaluateGame(board, players);
+
+    expect(result.winners).toEqual(["p1", "p2"]);
+  });
 });
