@@ -6,7 +6,8 @@ const CATEGORY_RANK = {
   "One Pair": 1,
   "Two Pair": 2,
   "Three of a Kind": 3,
-  "Straight": 4
+  "Straight": 4,
+  "Flush": 5
 };
 
 function getRankValue(card) {
@@ -140,6 +141,31 @@ function evaluateStraight(cards) {
   return null;
 }
 
+function getSuitGroups(cards) {
+  const groups = new Map();
+  for (const card of cards) {
+    const suit = card[1];
+    const list = groups.get(suit) || [];
+    list.push(card);
+    groups.set(suit, list);
+  }
+  return groups;
+}
+
+function evaluateFlush(cards) {
+  const groups = getSuitGroups(cards);
+  for (const suitedCards of groups.values()) {
+    if (suitedCards.length >= 5) {
+      const ordered = sortByRankDesc(suitedCards);
+      return {
+        category: "Flush",
+        chosen5: ordered.slice(0, 5)
+      };
+    }
+  }
+  return null;
+}
+
 function evaluateHighCard(cards) {
   const ordered = sortByRankDesc(cards);
   return {
@@ -208,10 +234,24 @@ function compareStraight(a, b) {
   return getRankValue(a.chosen5[0]) - getRankValue(b.chosen5[0]);
 }
 
+function compareFlush(a, b) {
+  for (let i = 0; i < a.chosen5.length; i += 1) {
+    const diff = getRankValue(a.chosen5[i]) - getRankValue(b.chosen5[i]);
+    if (diff !== 0) {
+      return diff;
+    }
+  }
+  return 0;
+}
+
 function compareHands(a, b) {
   const categoryDiff = CATEGORY_RANK[a.category] - CATEGORY_RANK[b.category];
   if (categoryDiff !== 0) {
     return categoryDiff;
+  }
+
+  if (a.category === "Flush") {
+    return compareFlush(a, b);
   }
 
   if (a.category === "Straight") {
@@ -237,6 +277,7 @@ function evaluateGame(board, players) {
   const results = players.map((player) => {
     const allCards = board.concat(player.hole);
     const best =
+      evaluateFlush(allCards) ||
       evaluateStraight(allCards) ||
       evaluateThreeOfAKind(allCards) ||
       evaluateTwoPair(allCards) ||
