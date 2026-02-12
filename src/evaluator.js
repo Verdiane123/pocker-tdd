@@ -3,7 +3,8 @@
 const RANKS = "23456789TJQKA";
 const CATEGORY_RANK = {
   "High Card": 0,
-  "One Pair": 1
+  "One Pair": 1,
+  "Two Pair": 2
 };
 
 function getRankValue(card) {
@@ -45,6 +46,33 @@ function evaluateOnePair(cards) {
   };
 }
 
+function evaluateTwoPair(cards) {
+  const counts = getRankCounts(cards);
+  const pairRanks = Array.from(counts.entries())
+    .filter((entry) => entry[1] >= 2)
+    .map((entry) => entry[0])
+    .sort((a, b) => b - a);
+
+  if (pairRanks.length < 2) {
+    return null;
+  }
+
+  const ordered = sortByRankDesc(cards);
+  const highPairRank = pairRanks[0];
+  const lowPairRank = pairRanks[1];
+  const highPair = ordered.filter((card) => getRankValue(card) === highPairRank).slice(0, 2);
+  const lowPair = ordered.filter((card) => getRankValue(card) === lowPairRank).slice(0, 2);
+  const kicker = ordered.filter((card) => {
+    const rank = getRankValue(card);
+    return rank !== highPairRank && rank !== lowPairRank;
+  })[0];
+
+  return {
+    category: "Two Pair",
+    chosen5: highPair.concat(lowPair, [kicker])
+  };
+}
+
 function evaluateHighCard(cards) {
   const ordered = sortByRankDesc(cards);
   return {
@@ -79,10 +107,28 @@ function compareOnePair(a, b) {
   return 0;
 }
 
+function compareTwoPair(a, b) {
+  const highPairDiff = getRankValue(a.chosen5[0]) - getRankValue(b.chosen5[0]);
+  if (highPairDiff !== 0) {
+    return highPairDiff;
+  }
+
+  const lowPairDiff = getRankValue(a.chosen5[2]) - getRankValue(b.chosen5[2]);
+  if (lowPairDiff !== 0) {
+    return lowPairDiff;
+  }
+
+  return getRankValue(a.chosen5[4]) - getRankValue(b.chosen5[4]);
+}
+
 function compareHands(a, b) {
   const categoryDiff = CATEGORY_RANK[a.category] - CATEGORY_RANK[b.category];
   if (categoryDiff !== 0) {
     return categoryDiff;
+  }
+
+  if (a.category === "Two Pair") {
+    return compareTwoPair(a, b);
   }
 
   if (a.category === "One Pair") {
@@ -95,7 +141,10 @@ function compareHands(a, b) {
 function evaluateGame(board, players) {
   const results = players.map((player) => {
     const allCards = board.concat(player.hole);
-    const best = evaluateOnePair(allCards) || evaluateHighCard(allCards);
+    const best =
+      evaluateTwoPair(allCards) ||
+      evaluateOnePair(allCards) ||
+      evaluateHighCard(allCards);
     return { id: player.id, best };
   });
 

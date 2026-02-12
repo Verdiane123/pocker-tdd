@@ -37,7 +37,23 @@ describe("Texas Hold'em hand evaluation", () => {
       }
     ]);
   });
-  test.todo("detects Two Pair with correct tie-break ordering");
+  test("detects Two Pair with correct tie-break ordering", () => {
+    const board = ["AS", "KD", "7H", "4S", "2C"];
+    const players = [{ id: "p1", hole: ["7D", "2D"] }];
+
+    const result = evaluateGame(board, players);
+
+    expect(result.winners).toEqual(["p1"]);
+    expect(result.players).toEqual([
+      {
+        id: "p1",
+        best: {
+          category: "Two Pair",
+          chosen5: ["7H", "7D", "2C", "2D", "AS"]
+        }
+      }
+    ]);
+  });
   test.todo("detects Three of a Kind with correct tie-break ordering");
   test.todo("detects Straight including wheel (A-2-3-4-5)");
   test.todo("detects Flush and orders chosen5 correctly");
