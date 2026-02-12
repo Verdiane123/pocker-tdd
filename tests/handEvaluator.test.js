@@ -242,13 +242,13 @@ describe("Texas Hold'em hand evaluation", () => {
   test("breaks ties within Four of a Kind by quad then kicker", () => {
     const board = ["AS", "AD", "AH", "KS", "QC"];
     const players = [
-      { id: "p1", hole: ["AC", "2D"] },
+      { id: "p1", hole: ["AC", "7D"] },
       { id: "p2", hole: ["7C", "KC"] }
     ];
 
     const result = evaluateGame(board, players);
 
-    expect(result.winners).toEqual(["p2"]);
+    expect(result.winners).toEqual(["p1"]);
   });
   test("breaks ties within Straight Flush by high card", () => {
     const board = ["9S", "8S", "7S", "6S", "5C"];
@@ -275,10 +275,10 @@ describe("Texas Hold'em hand evaluation", () => {
     expect(result.players[0].best.category).toEqual("Straight");
   });
   test("Wheel straight (A-2-3-4-5) loses to 6-high straight", () => {
-    const board = ["2H", "3D", "4C", "6S", "7H"];
+    const board = ["2H", "3D", "5C", "7D", "8H"];
     const players = [
-      { id: "p1", hole: ["AH", "5C"] },
-      { id: "p2", hole: ["8D", "9C"] }
+      { id: "p1", hole: ["AH", "4C"] },
+      { id: "p2", hole: ["6D", "9C"] }
     ];
 
     const result = evaluateGame(board, players);

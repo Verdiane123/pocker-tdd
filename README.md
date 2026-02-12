@@ -1,53 +1,76 @@
 # Poker TDD (Texas Hold'em)
 
-## Setup
+## Configuration
 
-- Install dependencies: `npm install`
-- Run tests: `npm test`
+- Installer les dépendances: `npm install`
+- Lancer les tests: `npm test`
 
-## Card Notation
+## Notation des cartes
 
-- Ranks: `2 3 4 5 6 7 8 9 T J Q K A`
-- Suits: `S H D C` (spades, hearts, diamonds, clubs)
-- Example: `AS` (Ace of spades), `TD` (Ten of diamonds)
+- Rangs: `2 3 4 5 6 7 8 9 T V D R A`
+- Couleurs: `P C C K` (pique, cœur, carreau, trèfle)
+- Exemple: `AP` (As de pique), `TP` (Dix de carreau)
 
 ## API
 
 `evaluateGame(board, players)`
 
-- `board`: array of 5 cards, e.g. `["AS", "KD", "7H", "7S", "2C"]`
-- `players`: array of objects: `{ id, hole }` where `hole` is 2 cards
-- returns:
+- `board`: tableau de 5 cartes, ex: `["AP", "RD", "7C", "7P", "2K"]`
+- `players`: tableau d'objets: `{ id, hole }` où `hole` contient 2 cartes
+- retourne:
 	```json
 	{
-		"winners": ["p1"],
+		"winners": ["j1"],
 		"players": [
 			{
-				"id": "p1",
+				"id": "j1",
 				"best": {
-					"category": "High Card",
-					"chosen5": ["AS", "KD", "7S", "7H", "2C"]
+					"category": "Carte haute",
+					"chosen5": ["AP", "RD", "7P", "7C", "2K"]
 				}
 			}
 		]
 	}
 	```
 
-## Rules & Assumptions
+## Règles et hypothèses
 
-- Hand categories order (highest to lowest): Straight Flush, Four of a Kind, Full House, Flush, Straight, Three of a Kind, Two Pair, One Pair, High Card.
-- Tie-break rules: per Wikipedia.
-- Input validity: assume no duplicate cards (documented here).
+- Ordre des catégories de mains (du plus fort au plus faible): Quinte flush, Carré, Full, Couleur, Quinte, Brelan, Deux paires, Une paire, Carte haute.
+- Règles de départage: selon Wikipedia.
+- Validité d'entrée: on suppose qu'il n'y a pas de doublons de cartes.
 
-## `chosen5` Ordering (deterministic)
+## Ordre des `chosen5` (déterministe)
 
-The 5 cards are returned in a stable, category-specific order:
+Les 5 cartes sont retournées dans un ordre stable, spécifique à la catégorie:
 
-- Straight / Straight Flush: highest to lowest (wheel: `5 4 3 2 A`)
-- Four of a Kind: four cards (quad rank) first, then kicker
-- Full House: three-of-a-kind rank first, then the pair rank
-- Flush / High Card: cards in descending rank
-- Three of a Kind: triplet first, then remaining kickers in descending rank
-- Two Pair: higher pair, lower pair, then kicker
-- One Pair: pair first, then remaining three kickers in descending rank
+- Quinte / Quinte flush: du plus fort au plus faible (roue: `5 4 3 2 A`)
+- Carré: les quatre cartes du carré d'abord, puis le kicker
+- Full: le rang du brelan d'abord, puis le rang de la paire
+- Couleur / Carte haute: cartes en ordre décroissant
+- Brelan: le triplet d'abord, puis les kickers restants en ordre décroissant
+- Deux paires: la plus forte paire, la plus faible paire, puis le kicker
+- Une paire: la paire d'abord, puis les trois kickers restants en ordre décroissant
+
+## Catégories de mains
+
+1. **Quinte flush** : cinq cartes de même couleur qui forment une séquence
+2. **Carré** : quatre cartes du même rang
+3. **Full** : un brelan et une paire
+4. **Couleur** : cinq cartes de la même couleur
+5. **Quinte** : cinq cartes qui forment une séquence (la roue A-2-3-4-5 est valide)
+6. **Brelan** : trois cartes du même rang
+7. **Deux paires** : deux paires différentes
+8. **Une paire** : deux cartes du même rang
+9. **Carte haute** : la meilleure combinaison possible sans pattern
+
+## Hypothèse sur la roue (A-2-3-4-5)
+
+La roue (A-2-3-4-5) est une quinte valide où l'As est considéré comme la carte la plus basse. Elle perd contre toute autre quinte (6-7-8-9-10 la plus basse).
+
+## TDD et Git
+
+- Tous les tests doivent être écrits **avant** l'implémentation.
+- Les commits doivent montrer une séparation claire: tests → code → refactor.
+- La couverture de tests doit inclure chaque catégorie, le départage, et les cas de plateau.
+
 

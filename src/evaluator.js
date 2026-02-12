@@ -13,18 +13,6 @@ const CATEGORY_RANK = {
   "Straight Flush": 8
 };
 
-const EVALUATORS = [
-  evaluateStraightFlush,
-  evaluateFourOfAKind,
-  evaluateFullHouse,
-  evaluateFlush,
-  evaluateStraight,
-  evaluateThreeOfAKind,
-  evaluateTwoPair,
-  evaluateOnePair,
-  evaluateHighCard
-];
-
 function getRankValue(card) {
   return RANKS.indexOf(card[0]);
 }
@@ -310,6 +298,18 @@ function compareFullHouse(a, b) {
 function compareFourOfAKind(a, b) {
   return compareByIndices(a.chosen5, b.chosen5, [0, 4]);
 }
+
+const EVALUATORS = [
+  evaluateStraightFlush,
+  evaluateFourOfAKind,
+  evaluateFullHouse,
+  evaluateFlush,
+  evaluateStraight,
+  evaluateThreeOfAKind,
+  evaluateTwoPair,
+  evaluateOnePair,
+  evaluateHighCard
+];
 
 const COMPARATORS = {
   "Straight Flush": compareStraight,
