@@ -8,7 +8,8 @@ const CATEGORY_RANK = {
   "Three of a Kind": 3,
   "Straight": 4,
   "Flush": 5,
-  "Full House": 6
+  "Full House": 6,
+  "Four of a Kind": 7
 };
 
 function getRankValue(card) {
@@ -202,6 +203,28 @@ function evaluateFullHouse(cards) {
   };
 }
 
+function evaluateFourOfAKind(cards) {
+  const counts = getRankCounts(cards);
+  const quadRanks = Array.from(counts.entries())
+    .filter((entry) => entry[1] >= 4)
+    .map((entry) => entry[0])
+    .sort((a, b) => b - a);
+
+  if (quadRanks.length === 0) {
+    return null;
+  }
+
+  const ordered = sortByRankDesc(cards);
+  const quadRank = quadRanks[0];
+  const quadCards = ordered.filter((card) => getRankValue(card) === quadRank).slice(0, 4);
+  const kicker = ordered.filter((card) => getRankValue(card) !== quadRank)[0];
+
+  return {
+    category: "Four of a Kind",
+    chosen5: quadCards.concat([kicker])
+  };
+}
+
 function evaluateHighCard(cards) {
   const ordered = sortByRankDesc(cards);
   return {
@@ -288,10 +311,22 @@ function compareFullHouse(a, b) {
   return getRankValue(a.chosen5[3]) - getRankValue(b.chosen5[3]);
 }
 
+function compareFourOfAKind(a, b) {
+  const quadDiff = getRankValue(a.chosen5[0]) - getRankValue(b.chosen5[0]);
+  if (quadDiff !== 0) {
+    return quadDiff;
+  }
+  return getRankValue(a.chosen5[4]) - getRankValue(b.chosen5[4]);
+}
+
 function compareHands(a, b) {
   const categoryDiff = CATEGORY_RANK[a.category] - CATEGORY_RANK[b.category];
   if (categoryDiff !== 0) {
     return categoryDiff;
+  }
+
+  if (a.category === "Four of a Kind") {
+    return compareFourOfAKind(a, b);
   }
 
   if (a.category === "Full House") {
@@ -325,6 +360,7 @@ function evaluateGame(board, players) {
   const results = players.map((player) => {
     const allCards = board.concat(player.hole);
     const best =
+      evaluateFourOfAKind(allCards) ||
       evaluateFullHouse(allCards) ||
       evaluateFlush(allCards) ||
       evaluateStraight(allCards) ||
