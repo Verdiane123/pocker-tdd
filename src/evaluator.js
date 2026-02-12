@@ -9,7 +9,8 @@ const CATEGORY_RANK = {
   "Straight": 4,
   "Flush": 5,
   "Full House": 6,
-  "Four of a Kind": 7
+  "Four of a Kind": 7,
+  "Straight Flush": 8
 };
 
 function getRankValue(card) {
@@ -140,6 +141,22 @@ function evaluateStraight(cards) {
     }
   }
 
+  return null;
+}
+
+function evaluateStraightFlush(cards) {
+  const groups = getSuitGroups(cards);
+  for (const suitedCards of groups.values()) {
+    if (suitedCards.length >= 5) {
+      const straight = evaluateStraight(suitedCards);
+      if (straight) {
+        return {
+          category: "Straight Flush",
+          chosen5: straight.chosen5
+        };
+      }
+    }
+  }
   return null;
 }
 
@@ -325,6 +342,10 @@ function compareHands(a, b) {
     return categoryDiff;
   }
 
+  if (a.category === "Straight Flush") {
+    return compareStraight(a, b);
+  }
+
   if (a.category === "Four of a Kind") {
     return compareFourOfAKind(a, b);
   }
@@ -360,6 +381,7 @@ function evaluateGame(board, players) {
   const results = players.map((player) => {
     const allCards = board.concat(player.hole);
     const best =
+      evaluateStraightFlush(allCards) ||
       evaluateFourOfAKind(allCards) ||
       evaluateFullHouse(allCards) ||
       evaluateFlush(allCards) ||

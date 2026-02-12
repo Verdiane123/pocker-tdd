@@ -139,7 +139,23 @@ describe("Texas Hold'em hand evaluation", () => {
       }
     ]);
   });
-  test.todo("detects Straight Flush (incl. royal)");
+  test("detects Straight Flush (incl. royal)", () => {
+    const board = ["AS", "KS", "QS", "2D", "3C"];
+    const players = [{ id: "p1", hole: ["JS", "TS"] }];
+
+    const result = evaluateGame(board, players);
+
+    expect(result.winners).toEqual(["p1"]);
+    expect(result.players).toEqual([
+      {
+        id: "p1",
+        best: {
+          category: "Straight Flush",
+          chosen5: ["AS", "KS", "QS", "JS", "TS"]
+        }
+      }
+    ]);
+  });
   test.todo("selects best 5 cards out of 7 (board plays)");
   test.todo("splits pot when best hands are equal");
 });
