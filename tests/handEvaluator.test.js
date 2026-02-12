@@ -206,4 +206,37 @@ describe("Texas Hold'em hand evaluation", () => {
 
     expect(result.winners).toEqual(["p2"]);
   });
+  test("breaks ties within Straight by high card", () => {
+    const board = ["9S", "8D", "7H", "6C", "5S"];
+    const players = [
+      { id: "p1", hole: ["4D", "KC"] },
+      { id: "p2", hole: ["TS", "2C"] }
+    ];
+
+    const result = evaluateGame(board, players);
+
+    expect(result.winners).toEqual(["p2"]);
+  });
+  test("breaks ties within Flush by card ranks", () => {
+    const board = ["AS", "KS", "7S", "4S", "2C"];
+    const players = [
+      { id: "p1", hole: ["9S", "3D"] },
+      { id: "p2", hole: ["QS", "6D"] }
+    ];
+
+    const result = evaluateGame(board, players);
+
+    expect(result.winners).toEqual(["p2"]);
+  });
+  test("breaks ties within Full House by trip then pair rank", () => {
+    const board = ["AS", "AD", "7H", "7S", "KC"];
+    const players = [
+      { id: "p1", hole: ["7D", "2C"] },
+      { id: "p2", hole: ["KS", "KD"] }
+    ];
+
+    const result = evaluateGame(board, players);
+
+    expect(result.winners).toEqual(["p2"]);
+  });
 });
