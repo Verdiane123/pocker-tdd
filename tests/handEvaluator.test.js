@@ -71,7 +71,23 @@ describe("Texas Hold'em hand evaluation", () => {
       }
     ]);
   });
-  test.todo("detects Straight including wheel (A-2-3-4-5)");
+  test("detects Straight including wheel (A-2-3-4-5)", () => {
+    const board = ["AS", "2D", "3H", "9S", "KC"];
+    const players = [{ id: "p1", hole: ["4D", "5C"] }];
+
+    const result = evaluateGame(board, players);
+
+    expect(result.winners).toEqual(["p1"]);
+    expect(result.players).toEqual([
+      {
+        id: "p1",
+        best: {
+          category: "Straight",
+          chosen5: ["5C", "4D", "3H", "2D", "AS"]
+        }
+      }
+    ]);
+  });
   test.todo("detects Flush and orders chosen5 correctly");
   test.todo("detects Full House with correct tie-break ordering");
   test.todo("detects Four of a Kind with correct tie-break ordering");

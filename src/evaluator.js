@@ -5,7 +5,8 @@ const CATEGORY_RANK = {
   "High Card": 0,
   "One Pair": 1,
   "Two Pair": 2,
-  "Three of a Kind": 3
+  "Three of a Kind": 3,
+  "Straight": 4
 };
 
 function getRankValue(card) {
@@ -96,6 +97,49 @@ function evaluateThreeOfAKind(cards) {
   };
 }
 
+function getUniqueRanksDesc(cards) {
+  const unique = new Set(cards.map((card) => getRankValue(card)));
+  return Array.from(unique).sort((a, b) => b - a);
+}
+
+function buildStraightFromHigh(highRank, cards) {
+  const ordered = sortByRankDesc(cards);
+  const needed = [highRank, highRank - 1, highRank - 2, highRank - 3, highRank - 4];
+  return needed.map((rank) => ordered.find((card) => getRankValue(card) === rank));
+}
+
+function evaluateStraight(cards) {
+  const uniqueRanks = getUniqueRanksDesc(cards);
+  const hasAce = uniqueRanks.includes(RANKS.indexOf("A"));
+
+  for (let i = 0; i <= uniqueRanks.length - 5; i += 1) {
+    const start = uniqueRanks[i];
+    const run = [start, start - 1, start - 2, start - 3, start - 4];
+    const isStraight = run.every((rank) => uniqueRanks.includes(rank));
+    if (isStraight) {
+      return {
+        category: "Straight",
+        chosen5: buildStraightFromHigh(start, cards)
+      };
+    }
+  }
+
+  if (hasAce) {
+    const wheelRanks = [3, 2, 1, 0];
+    const hasWheel = wheelRanks.every((rank) => uniqueRanks.includes(rank));
+    if (hasWheel) {
+      const ordered = sortByRankDesc(cards);
+      const needed = [3, 2, 1, 0, RANKS.indexOf("A")];
+      return {
+        category: "Straight",
+        chosen5: needed.map((rank) => ordered.find((card) => getRankValue(card) === rank))
+      };
+    }
+  }
+
+  return null;
+}
+
 function evaluateHighCard(cards) {
   const ordered = sortByRankDesc(cards);
   return {
@@ -160,10 +204,18 @@ function compareThreeOfAKind(a, b) {
   return 0;
 }
 
+function compareStraight(a, b) {
+  return getRankValue(a.chosen5[0]) - getRankValue(b.chosen5[0]);
+}
+
 function compareHands(a, b) {
   const categoryDiff = CATEGORY_RANK[a.category] - CATEGORY_RANK[b.category];
   if (categoryDiff !== 0) {
     return categoryDiff;
+  }
+
+  if (a.category === "Straight") {
+    return compareStraight(a, b);
   }
 
   if (a.category === "Three of a Kind") {
@@ -185,6 +237,7 @@ function evaluateGame(board, players) {
   const results = players.map((player) => {
     const allCards = board.concat(player.hole);
     const best =
+      evaluateStraight(allCards) ||
       evaluateThreeOfAKind(allCards) ||
       evaluateTwoPair(allCards) ||
       evaluateOnePair(allCards) ||
