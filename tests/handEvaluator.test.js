@@ -184,4 +184,26 @@ describe("Texas Hold'em hand evaluation", () => {
 
     expect(result.winners).toEqual(["p1", "p2"]);
   });
+  test("breaks ties within One Pair by kickers", () => {
+    const board = ["AS", "KD", "7H", "4S", "2C"];
+    const players = [
+      { id: "p1", hole: ["7D", "QC"] },
+      { id: "p2", hole: ["7C", "9D"] }
+    ];
+
+    const result = evaluateGame(board, players);
+
+    expect(result.winners).toEqual(["p1"]);
+  });
+  test("breaks ties within Two Pair by pairs then kicker", () => {
+    const board = ["AS", "KD", "7H", "4S", "2C"];
+    const players = [
+      { id: "p1", hole: ["7D", "2D"] },
+      { id: "p2", hole: ["7C", "4D"] }
+    ];
+
+    const result = evaluateGame(board, players);
+
+    expect(result.winners).toEqual(["p2"]);
+  });
 });

@@ -13,6 +13,18 @@ const CATEGORY_RANK = {
   "Straight Flush": 8
 };
 
+const EVALUATORS = [
+  evaluateStraightFlush,
+  evaluateFourOfAKind,
+  evaluateFullHouse,
+  evaluateFlush,
+  evaluateStraight,
+  evaluateThreeOfAKind,
+  evaluateTwoPair,
+  evaluateOnePair,
+  evaluateHighCard
+];
+
 function getRankValue(card) {
   return RANKS.indexOf(card[0]);
 }
@@ -250,9 +262,19 @@ function evaluateHighCard(cards) {
   };
 }
 
-function compareHighCard(a, b) {
-  for (let i = 0; i < a.chosen5.length; i += 1) {
-    const diff = getRankValue(a.chosen5[i]) - getRankValue(b.chosen5[i]);
+function compareByCards(aCards, bCards, startIndex) {
+  for (let i = startIndex; i < aCards.length; i += 1) {
+    const diff = getRankValue(aCards[i]) - getRankValue(bCards[i]);
+    if (diff !== 0) {
+      return diff;
+    }
+  }
+  return 0;
+}
+
+function compareByIndices(aCards, bCards, indices) {
+  for (const index of indices) {
+    const diff = getRankValue(aCards[index]) - getRankValue(bCards[index]);
     if (diff !== 0) {
       return diff;
     }
@@ -261,79 +283,39 @@ function compareHighCard(a, b) {
 }
 
 function compareOnePair(a, b) {
-  const pairRankDiff = getRankValue(a.chosen5[0]) - getRankValue(b.chosen5[0]);
+  const pairRankDiff = compareByIndices(a.chosen5, b.chosen5, [0]);
   if (pairRankDiff !== 0) {
     return pairRankDiff;
   }
-
-  for (let i = 2; i < a.chosen5.length; i += 1) {
-    const diff = getRankValue(a.chosen5[i]) - getRankValue(b.chosen5[i]);
-    if (diff !== 0) {
-      return diff;
-    }
-  }
-
-  return 0;
+  return compareByCards(a.chosen5, b.chosen5, 2);
 }
 
 function compareTwoPair(a, b) {
-  const highPairDiff = getRankValue(a.chosen5[0]) - getRankValue(b.chosen5[0]);
-  if (highPairDiff !== 0) {
-    return highPairDiff;
-  }
-
-  const lowPairDiff = getRankValue(a.chosen5[2]) - getRankValue(b.chosen5[2]);
-  if (lowPairDiff !== 0) {
-    return lowPairDiff;
-  }
-
-  return getRankValue(a.chosen5[4]) - getRankValue(b.chosen5[4]);
+  return compareByIndices(a.chosen5, b.chosen5, [0, 2, 4]);
 }
 
 function compareThreeOfAKind(a, b) {
-  const tripDiff = getRankValue(a.chosen5[0]) - getRankValue(b.chosen5[0]);
+  const tripDiff = compareByIndices(a.chosen5, b.chosen5, [0]);
   if (tripDiff !== 0) {
     return tripDiff;
   }
-
-  for (let i = 3; i < a.chosen5.length; i += 1) {
-    const diff = getRankValue(a.chosen5[i]) - getRankValue(b.chosen5[i]);
-    if (diff !== 0) {
-      return diff;
-    }
-  }
-
-  return 0;
+  return compareByCards(a.chosen5, b.chosen5, 3);
 }
 
 function compareStraight(a, b) {
-  return getRankValue(a.chosen5[0]) - getRankValue(b.chosen5[0]);
+  return compareByIndices(a.chosen5, b.chosen5, [0]);
 }
 
 function compareFlush(a, b) {
-  for (let i = 0; i < a.chosen5.length; i += 1) {
-    const diff = getRankValue(a.chosen5[i]) - getRankValue(b.chosen5[i]);
-    if (diff !== 0) {
-      return diff;
-    }
-  }
-  return 0;
+  return compareByCards(a.chosen5, b.chosen5, 0);
 }
 
 function compareFullHouse(a, b) {
-  const tripDiff = getRankValue(a.chosen5[0]) - getRankValue(b.chosen5[0]);
-  if (tripDiff !== 0) {
-    return tripDiff;
-  }
-  return getRankValue(a.chosen5[3]) - getRankValue(b.chosen5[3]);
+  return compareByIndices(a.chosen5, b.chosen5, [0, 3]);
 }
 
 function compareFourOfAKind(a, b) {
-  const quadDiff = getRankValue(a.chosen5[0]) - getRankValue(b.chosen5[0]);
-  if (quadDiff !== 0) {
-    return quadDiff;
-  }
-  return getRankValue(a.chosen5[4]) - getRankValue(b.chosen5[4]);
+  return compareByIndices(a.chosen5, b.chosen5, [0, 4]);
 }
 
 function compareHands(a, b) {
@@ -374,22 +356,13 @@ function compareHands(a, b) {
     return compareOnePair(a, b);
   }
 
-  return compareHighCard(a, b);
+  return compareByCards(a.chosen5, b.chosen5, 0);
 }
 
 function evaluateGame(board, players) {
   const results = players.map((player) => {
     const allCards = board.concat(player.hole);
-    const best =
-      evaluateStraightFlush(allCards) ||
-      evaluateFourOfAKind(allCards) ||
-      evaluateFullHouse(allCards) ||
-      evaluateFlush(allCards) ||
-      evaluateStraight(allCards) ||
-      evaluateThreeOfAKind(allCards) ||
-      evaluateTwoPair(allCards) ||
-      evaluateOnePair(allCards) ||
-      evaluateHighCard(allCards);
+    const best = EVALUATORS.map((evaluator) => evaluator(allCards)).find(Boolean);
     return { id: player.id, best };
   });
 
