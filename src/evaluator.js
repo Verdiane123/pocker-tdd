@@ -4,7 +4,8 @@ const RANKS = "23456789TJQKA";
 const CATEGORY_RANK = {
   "High Card": 0,
   "One Pair": 1,
-  "Two Pair": 2
+  "Two Pair": 2,
+  "Three of a Kind": 3
 };
 
 function getRankValue(card) {
@@ -73,6 +74,28 @@ function evaluateTwoPair(cards) {
   };
 }
 
+function evaluateThreeOfAKind(cards) {
+  const counts = getRankCounts(cards);
+  const tripRanks = Array.from(counts.entries())
+    .filter((entry) => entry[1] >= 3)
+    .map((entry) => entry[0])
+    .sort((a, b) => b - a);
+
+  if (tripRanks.length === 0) {
+    return null;
+  }
+
+  const ordered = sortByRankDesc(cards);
+  const tripRank = tripRanks[0];
+  const tripCards = ordered.filter((card) => getRankValue(card) === tripRank).slice(0, 3);
+  const kickers = ordered.filter((card) => getRankValue(card) !== tripRank).slice(0, 2);
+
+  return {
+    category: "Three of a Kind",
+    chosen5: tripCards.concat(kickers)
+  };
+}
+
 function evaluateHighCard(cards) {
   const ordered = sortByRankDesc(cards);
   return {
@@ -121,10 +144,30 @@ function compareTwoPair(a, b) {
   return getRankValue(a.chosen5[4]) - getRankValue(b.chosen5[4]);
 }
 
+function compareThreeOfAKind(a, b) {
+  const tripDiff = getRankValue(a.chosen5[0]) - getRankValue(b.chosen5[0]);
+  if (tripDiff !== 0) {
+    return tripDiff;
+  }
+
+  for (let i = 3; i < a.chosen5.length; i += 1) {
+    const diff = getRankValue(a.chosen5[i]) - getRankValue(b.chosen5[i]);
+    if (diff !== 0) {
+      return diff;
+    }
+  }
+
+  return 0;
+}
+
 function compareHands(a, b) {
   const categoryDiff = CATEGORY_RANK[a.category] - CATEGORY_RANK[b.category];
   if (categoryDiff !== 0) {
     return categoryDiff;
+  }
+
+  if (a.category === "Three of a Kind") {
+    return compareThreeOfAKind(a, b);
   }
 
   if (a.category === "Two Pair") {
@@ -142,6 +185,7 @@ function evaluateGame(board, players) {
   const results = players.map((player) => {
     const allCards = board.concat(player.hole);
     const best =
+      evaluateThreeOfAKind(allCards) ||
       evaluateTwoPair(allCards) ||
       evaluateOnePair(allCards) ||
       evaluateHighCard(allCards);
