@@ -42,21 +42,36 @@ function getRankCounts(cards) {
   return counts;
 }
 
-function evaluateOnePair(cards) {
-  const counts = getRankCounts(cards);
-  const pairRanks = Array.from(counts.entries())
-    .filter((entry) => entry[1] >= 2)
+function getRanksByCount(counts, minCount) {
+  return Array.from(counts.entries())
+    .filter((entry) => entry[1] >= minCount)
     .map((entry) => entry[0])
     .sort((a, b) => b - a);
+}
+
+function getCardsOfRank(cards, rankValue, limit) {
+  return sortByRankDesc(cards)
+    .filter((card) => getRankValue(card) === rankValue)
+    .slice(0, limit);
+}
+
+function getCardsExcludingRanks(cards, excludedRanks, limit) {
+  return sortByRankDesc(cards)
+    .filter((card) => !excludedRanks.includes(getRankValue(card)))
+    .slice(0, limit);
+}
+
+function evaluateOnePair(cards) {
+  const counts = getRankCounts(cards);
+  const pairRanks = getRanksByCount(counts, 2);
 
   if (pairRanks.length === 0) {
     return null;
   }
 
-  const ordered = sortByRankDesc(cards);
   const pairRank = pairRanks[0];
-  const pairCards = ordered.filter((card) => getRankValue(card) === pairRank).slice(0, 2);
-  const kickers = ordered.filter((card) => getRankValue(card) !== pairRank).slice(0, 3);
+  const pairCards = getCardsOfRank(cards, pairRank, 2);
+  const kickers = getCardsExcludingRanks(cards, [pairRank], 3);
 
   return {
     category: "One Pair",
@@ -66,46 +81,35 @@ function evaluateOnePair(cards) {
 
 function evaluateTwoPair(cards) {
   const counts = getRankCounts(cards);
-  const pairRanks = Array.from(counts.entries())
-    .filter((entry) => entry[1] >= 2)
-    .map((entry) => entry[0])
-    .sort((a, b) => b - a);
+  const pairRanks = getRanksByCount(counts, 2);
 
   if (pairRanks.length < 2) {
     return null;
   }
 
-  const ordered = sortByRankDesc(cards);
   const highPairRank = pairRanks[0];
   const lowPairRank = pairRanks[1];
-  const highPair = ordered.filter((card) => getRankValue(card) === highPairRank).slice(0, 2);
-  const lowPair = ordered.filter((card) => getRankValue(card) === lowPairRank).slice(0, 2);
-  const kicker = ordered.filter((card) => {
-    const rank = getRankValue(card);
-    return rank !== highPairRank && rank !== lowPairRank;
-  })[0];
+  const highPair = getCardsOfRank(cards, highPairRank, 2);
+  const lowPair = getCardsOfRank(cards, lowPairRank, 2);
+  const kicker = getCardsExcludingRanks(cards, [highPairRank, lowPairRank], 1);
 
   return {
     category: "Two Pair",
-    chosen5: highPair.concat(lowPair, [kicker])
+    chosen5: highPair.concat(lowPair, kicker)
   };
 }
 
 function evaluateThreeOfAKind(cards) {
   const counts = getRankCounts(cards);
-  const tripRanks = Array.from(counts.entries())
-    .filter((entry) => entry[1] >= 3)
-    .map((entry) => entry[0])
-    .sort((a, b) => b - a);
+  const tripRanks = getRanksByCount(counts, 3);
 
   if (tripRanks.length === 0) {
     return null;
   }
 
-  const ordered = sortByRankDesc(cards);
   const tripRank = tripRanks[0];
-  const tripCards = ordered.filter((card) => getRankValue(card) === tripRank).slice(0, 3);
-  const kickers = ordered.filter((card) => getRankValue(card) !== tripRank).slice(0, 2);
+  const tripCards = getCardsOfRank(cards, tripRank, 3);
+  const kickers = getCardsExcludingRanks(cards, [tripRank], 2);
 
   return {
     category: "Three of a Kind",
@@ -199,32 +203,25 @@ function evaluateFlush(cards) {
 
 function evaluateFullHouse(cards) {
   const counts = getRankCounts(cards);
-  const trips = Array.from(counts.entries())
-    .filter((entry) => entry[1] >= 3)
-    .map((entry) => entry[0])
-    .sort((a, b) => b - a);
+  const trips = getRanksByCount(counts, 3);
 
   if (trips.length === 0) {
     return null;
   }
 
-  const remainingPairs = Array.from(counts.entries())
-    .filter((entry) => entry[0] !== trips[0] && entry[1] >= 2)
+  const tripRank = trips[0];
+  const pairsExcludingTrip = Array.from(counts.entries())
+    .filter((entry) => entry[0] !== tripRank && entry[1] >= 2)
     .map((entry) => entry[0])
     .sort((a, b) => b - a);
 
-  if (remainingPairs.length === 0) {
-    if (trips.length < 2) {
-      return null;
-    }
-    remainingPairs.push(trips[1]);
+  const pairRank = pairsExcludingTrip.length > 0 ? pairsExcludingTrip[0] : (trips[1] || null);
+  if (!pairRank) {
+    return null;
   }
 
-  const ordered = sortByRankDesc(cards);
-  const tripRank = trips[0];
-  const pairRank = remainingPairs[0];
-  const tripCards = ordered.filter((card) => getRankValue(card) === tripRank).slice(0, 3);
-  const pairCards = ordered.filter((card) => getRankValue(card) === pairRank).slice(0, 2);
+  const tripCards = getCardsOfRank(cards, tripRank, 3);
+  const pairCards = getCardsOfRank(cards, pairRank, 2);
 
   return {
     category: "Full House",
@@ -234,23 +231,19 @@ function evaluateFullHouse(cards) {
 
 function evaluateFourOfAKind(cards) {
   const counts = getRankCounts(cards);
-  const quadRanks = Array.from(counts.entries())
-    .filter((entry) => entry[1] >= 4)
-    .map((entry) => entry[0])
-    .sort((a, b) => b - a);
+  const quadRanks = getRanksByCount(counts, 4);
 
   if (quadRanks.length === 0) {
     return null;
   }
 
-  const ordered = sortByRankDesc(cards);
   const quadRank = quadRanks[0];
-  const quadCards = ordered.filter((card) => getRankValue(card) === quadRank).slice(0, 4);
-  const kicker = ordered.filter((card) => getRankValue(card) !== quadRank)[0];
+  const quadCards = getCardsOfRank(cards, quadRank, 4);
+  const kicker = getCardsExcludingRanks(cards, [quadRank], 1);
 
   return {
     category: "Four of a Kind",
-    chosen5: quadCards.concat([kicker])
+    chosen5: quadCards.concat(kicker)
   };
 }
 
@@ -318,45 +311,25 @@ function compareFourOfAKind(a, b) {
   return compareByIndices(a.chosen5, b.chosen5, [0, 4]);
 }
 
+const COMPARATORS = {
+  "Straight Flush": compareStraight,
+  "Four of a Kind": compareFourOfAKind,
+  "Full House": compareFullHouse,
+  "Flush": compareFlush,
+  "Straight": compareStraight,
+  "Three of a Kind": compareThreeOfAKind,
+  "Two Pair": compareTwoPair,
+  "One Pair": compareOnePair
+};
+
 function compareHands(a, b) {
   const categoryDiff = CATEGORY_RANK[a.category] - CATEGORY_RANK[b.category];
   if (categoryDiff !== 0) {
     return categoryDiff;
   }
 
-  if (a.category === "Straight Flush") {
-    return compareStraight(a, b);
-  }
-
-  if (a.category === "Four of a Kind") {
-    return compareFourOfAKind(a, b);
-  }
-
-  if (a.category === "Full House") {
-    return compareFullHouse(a, b);
-  }
-
-  if (a.category === "Flush") {
-    return compareFlush(a, b);
-  }
-
-  if (a.category === "Straight") {
-    return compareStraight(a, b);
-  }
-
-  if (a.category === "Three of a Kind") {
-    return compareThreeOfAKind(a, b);
-  }
-
-  if (a.category === "Two Pair") {
-    return compareTwoPair(a, b);
-  }
-
-  if (a.category === "One Pair") {
-    return compareOnePair(a, b);
-  }
-
-  return compareByCards(a.chosen5, b.chosen5, 0);
+  const comparator = COMPARATORS[a.category] || ((hand1, hand2) => compareByCards(hand1.chosen5, hand2.chosen5, 0));
+  return comparator(a, b);
 }
 
 function evaluateGame(board, players) {
