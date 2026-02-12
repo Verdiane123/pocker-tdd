@@ -105,7 +105,23 @@ describe("Texas Hold'em hand evaluation", () => {
       }
     ]);
   });
-  test.todo("detects Full House with correct tie-break ordering");
+  test("detects Full House with correct tie-break ordering", () => {
+    const board = ["AS", "AD", "7H", "7S", "KC"];
+    const players = [{ id: "p1", hole: ["7D", "2C"] }];
+
+    const result = evaluateGame(board, players);
+
+    expect(result.winners).toEqual(["p1"]);
+    expect(result.players).toEqual([
+      {
+        id: "p1",
+        best: {
+          category: "Full House",
+          chosen5: ["7H", "7S", "7D", "AS", "AD"]
+        }
+      }
+    ]);
+  });
   test.todo("detects Four of a Kind with correct tie-break ordering");
   test.todo("detects Straight Flush (incl. royal)");
   test.todo("selects best 5 cards out of 7 (board plays)");

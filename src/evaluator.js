@@ -7,7 +7,8 @@ const CATEGORY_RANK = {
   "Two Pair": 2,
   "Three of a Kind": 3,
   "Straight": 4,
-  "Flush": 5
+  "Flush": 5,
+  "Full House": 6
 };
 
 function getRankValue(card) {
@@ -166,6 +167,41 @@ function evaluateFlush(cards) {
   return null;
 }
 
+function evaluateFullHouse(cards) {
+  const counts = getRankCounts(cards);
+  const trips = Array.from(counts.entries())
+    .filter((entry) => entry[1] >= 3)
+    .map((entry) => entry[0])
+    .sort((a, b) => b - a);
+
+  if (trips.length === 0) {
+    return null;
+  }
+
+  const remainingPairs = Array.from(counts.entries())
+    .filter((entry) => entry[0] !== trips[0] && entry[1] >= 2)
+    .map((entry) => entry[0])
+    .sort((a, b) => b - a);
+
+  if (remainingPairs.length === 0) {
+    if (trips.length < 2) {
+      return null;
+    }
+    remainingPairs.push(trips[1]);
+  }
+
+  const ordered = sortByRankDesc(cards);
+  const tripRank = trips[0];
+  const pairRank = remainingPairs[0];
+  const tripCards = ordered.filter((card) => getRankValue(card) === tripRank).slice(0, 3);
+  const pairCards = ordered.filter((card) => getRankValue(card) === pairRank).slice(0, 2);
+
+  return {
+    category: "Full House",
+    chosen5: tripCards.concat(pairCards)
+  };
+}
+
 function evaluateHighCard(cards) {
   const ordered = sortByRankDesc(cards);
   return {
@@ -244,10 +280,22 @@ function compareFlush(a, b) {
   return 0;
 }
 
+function compareFullHouse(a, b) {
+  const tripDiff = getRankValue(a.chosen5[0]) - getRankValue(b.chosen5[0]);
+  if (tripDiff !== 0) {
+    return tripDiff;
+  }
+  return getRankValue(a.chosen5[3]) - getRankValue(b.chosen5[3]);
+}
+
 function compareHands(a, b) {
   const categoryDiff = CATEGORY_RANK[a.category] - CATEGORY_RANK[b.category];
   if (categoryDiff !== 0) {
     return categoryDiff;
+  }
+
+  if (a.category === "Full House") {
+    return compareFullHouse(a, b);
   }
 
   if (a.category === "Flush") {
@@ -277,6 +325,7 @@ function evaluateGame(board, players) {
   const results = players.map((player) => {
     const allCards = board.concat(player.hole);
     const best =
+      evaluateFullHouse(allCards) ||
       evaluateFlush(allCards) ||
       evaluateStraight(allCards) ||
       evaluateThreeOfAKind(allCards) ||
